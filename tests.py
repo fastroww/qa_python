@@ -1,24 +1,69 @@
+import pytest
 from main import BooksCollector
 
-# класс TestBooksCollector объединяет набор тестов, которыми мы покрываем наше приложение BooksCollector
-# обязательно указывать префикс Test
 class TestBooksCollector:
+    @pytest.fixture(autouse=True)
+    def collector(self):
+        self.collector = BooksCollector()
 
-    # пример теста:
-    # обязательно указывать префикс test_
-    # дальше идет название метода, который тестируем add_new_book_
-    # затем, что тестируем add_two_books - добавление двух книг
-    def test_add_new_book_add_two_books(self):
-        # создаем экземпляр (объект) класса BooksCollector
-        collector = BooksCollector()
+    @pytest.mark.parametrize(
+        "book_name, expected_result",
+        [
+            ["Преступление и наказание", True],
+            ["Горе от ума", True],
+            ["", False],
+            ["Очень длинное название книги которрое превышает 40 символов", False]
 
-        # добавляем две книги
-        collector.add_new_book('Гордость и предубеждение и зомби')
-        collector.add_new_book('Что делать, если ваш кот хочет вас убить')
+        ]
+    )
+    def test_add_new_book_add_books(self, book_name, expected_result):
+        self.collector.add_new_book(book_name)
+        assert (len(self.collector.get_books_genre()) == 1)  == expected_result
 
-        # проверяем, что добавилось именно две
-        # словарь books_rating, который нам возвращает метод get_books_rating, имеет длину 2
-        assert len(collector.get_books_rating()) == 2
 
-    # напиши свои тесты ниже
-    # чтобы тесты были независимыми в каждом из них создавай отдельный экземпляр класса BooksCollector()
+    def test_add_new_book_add_old_book(self):
+        self.collector.add_new_book("Преступление и наказание")
+        self.collector.add_new_book("Преступление и наказание")
+        assert len(self.collector.get_books_genre()) == 1
+
+
+    def test_set_book_genre_and_get_book_genre(self):
+        self.collector.add_new_book("Преступление и наказание")
+        self.collector.set_book_genre("Преступление и наказание", "Фантастика")
+        assert self.collector.get_book_genre("Преступление и наказание") == "Фантастика"
+
+
+
+    def test_get_books_with_specific_genre_get_two_books(self):
+        self.collector.add_new_book("Преступление и наказание")
+        self.collector.add_new_book("Горе от ума")
+        self.collector.set_book_genre("Преступление и наказание", "Фантастика")
+        self.collector.set_book_genre("Горе от ума", "Фантастика")
+        assert self.collector.get_books_with_specific_genre("Фантастика") == ["Преступление и наказание", "Горе от ума"]
+
+
+    def test_get_books_genre(self):
+        self.collector.add_new_book("Преступление и наказание")
+        self.collector.set_book_genre("Преступление и наказание", "Фантастика")
+        assert self.collector.get_books_genre() == {"Преступление и наказание": "Фантастика"}
+
+
+    @pytest.mark.parametrize("name, genre, expected_result", [["Чебурашка", "Мультфильмы", True],["Остров проклятых", "Ужасы", False]])
+    def test_get_books_for_children_parametrize(self, name, genre, expected_result):
+        self.collector.add_new_book(name)
+        self.collector.set_book_genre(name, genre)
+        assert (len(self.collector.get_books_for_children()) == 1) == expected_result
+
+
+    def test_add_book_in_favorites_and_get_list_of_favorites_books(self):
+        self.collector.add_new_book("Преступление и наказание")
+        self.collector.add_book_in_favorites("Преступление и наказание")
+        assert self.collector.get_list_of_favorites_books() == ["Преступление и наказание"]
+
+
+    def test_delete_book_from_favorites_delete_books(self):
+        self.collector.add_new_book("Преступление и наказание")
+        self.collector.add_book_in_favorites("Преступление и наказание")
+        self.collector.delete_book_from_favorites("Преступление и наказание")
+        assert self.collector.get_list_of_favorites_books() == []
+
